@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SertifiTest
 {
@@ -16,26 +17,37 @@ namespace SertifiTest
             URL = url;
         }
 
-        public string URL { get; private set; }
-         
+        public string URL { get; private set; }         
 
-        public void SubmitTestResults(int highestAttendanceYear, int highestGPAYear, List<int> top10HighestGPAStudents, int mostInconsistentStudentId)
+        public bool SubmitTestResults(int highestAttendanceYear, int highestGPAYear, List<int> top10HighestGPAStudents, int mostInconsistentStudentId)
         {
             var payload = CreatePayload(highestAttendanceYear, highestGPAYear, top10HighestGPAStudents, mostInconsistentStudentId);
 
             string json = JsonConvert.SerializeObject(payload, Formatting.Indented);
+            Console.WriteLine("*************JSON PAYLOAD BEING SUBMITTED*************");
             Console.WriteLine(json);
+            Console.WriteLine("*************End of JSON PAYLOAD*************");
 
-            PerformPUToperation(json);
+            return PerformPUToperation(json).Result;
         }
 
-        private async void PerformPUToperation(string json)
+        public async Task<bool> PerformPUToperation(string json)
         {
             HttpClient client = new HttpClient();
             var data = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = client.PutAsync(URL,data).Result;
+            HttpResponseMessage responseMessage= new HttpResponseMessage();
 
-            var success = await response.Content.ReadAsStringAsync();
+            try
+            {
+                responseMessage = await client.PutAsync(URL, data);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception {0}",ex.Message);
+                responseMessage.StatusCode = System.Net.HttpStatusCode.NotFound;
+
+            }            
+            return responseMessage.IsSuccessStatusCode;
         }
 
         private TestSubmissionProfile CreatePayload(int highestAttendanceYear, int highestGPAYear, List<int> top10HighestGPAStudents, int mostInconsistentStudentId)
@@ -48,7 +60,6 @@ namespace SertifiTest
                 YearWithHighestOverallGpa = highestGPAYear,
                 Top10StudentIdsWithHighestGpa = top10HighestGPAStudents,
                 StudentIdMostInconsistent = mostInconsistentStudentId
-
             };
         }
     }

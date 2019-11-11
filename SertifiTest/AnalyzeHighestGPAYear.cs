@@ -11,6 +11,8 @@ namespace SertifiTest
         {
             var gpaDictionary = new Dictionary<int, double>();
 
+            if (studentProfiles == null || studentProfiles.Count() == 0) { return 0; }
+
             foreach (var profile in studentProfiles)
             {
                 for (int year = profile.StartYear; year <= profile.EndYear; year++)
@@ -24,11 +26,9 @@ namespace SertifiTest
                     {
                         gpaDictionary.Add(year, profile.GPARecord.ElementAt(index));
                     }
-
                 }
             }
             return gpaDictionary.Select(x => new { x.Key, x.Value }).OrderByDescending(x => x.Value).First().Key;
         }
-
     }
 }

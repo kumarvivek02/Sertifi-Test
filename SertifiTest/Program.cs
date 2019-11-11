@@ -4,55 +4,80 @@ using System.Threading.Tasks;
 
 namespace SertifiTest
 {
-    class Program
+    public class Program
     {
-        const string urlGET = "http://apitest.sertifi.net/api/Students";
-        const string urlPUT = " http://apitest.sertifi.net/api/StudentAggregate";
+        const string urlGET = SertifiURLs.urlGET;
+        const string urlPUT = SertifiURLs.urlPUT;
 
         static void Main(string[] args)
-        {
-           
-
+        { 
             IStudentProfile studentProfile = new StudentProfile();
-
-
             IFetchData fetchData = new FetchData(urlGET);
 
             var studentProfiles = ReadDataFromSertifiAsync(fetchData).Result;
 
             //Year of highest attendance
-            IAnalyzeHighestAttendanceYear analyzeData = new AnalyzeHighestAttendanceYear();
-            var yearOfHighestAttendance = analyzeData.GetYearOfHighestAttendance(studentProfiles);
+            var yearOfHighestAttendance = CalculateYearOfHighestAttendance(studentProfiles);           
 
             //Year of highest overall GPA
-            IAnalyzeHighestGPAYear analyzeHighestGPAYear = new AnalyzeHighestGPAYear();
-            var yearOfHighestGPA = analyzeHighestGPAYear.YearOfHighestGPA(studentProfiles);
-
+            var yearOfHighestGPA = CalculateYearOfHighestOverallGPA(studentProfiles);
+           
             //Top 10 Student Id's with highest overall GPA
-            IAnalyzeStudentsWithHighestGPA analyzeStudentsWithHighestGPA = new AnalyzeStudentsWithHighestGPA();
-            var listOfStudentIdsWithHighestGPA = analyzeStudentsWithHighestGPA.StudentsWithHighestOverallGPA(studentProfiles);
+            var listOfStudentIdsWithHighestGPA = Top10StudentIdsWithHighestOverallGPA(studentProfiles);
 
-            //Largest GPA diff
-            IAnalyzeLargestGPADifference analyzeLargestGPADifference = new AnalyzeLargestGPADifference();
-            var mostInconsistentStudentId = analyzeLargestGPADifference.StudentIdWithLargestMinMaxGPADifference(studentProfiles);
-
+            //Largest GPA diff            
+            var mostInconsistentStudentId = StudentWithLargestGPADifference(studentProfiles);
+           
             //Submit
-            SubmitResults submitResults = new SubmitResults(urlPUT);
-            submitResults.SubmitTestResults(yearOfHighestAttendance, yearOfHighestGPA, listOfStudentIdsWithHighestGPA, mostInconsistentStudentId);
-
+            var isSuccess = SubmitTestResults(yearOfHighestAttendance, yearOfHighestGPA, listOfStudentIdsWithHighestGPA, mostInconsistentStudentId);
+            Console.WriteLine();
+            Console.WriteLine(" Value of \"isSuccess\" following PUT operation was {0}", isSuccess);
         }
 
         public static async Task<IEnumerable<StudentProfile>> ReadDataFromSertifiAsync(IFetchData fetchData)
         {
-            var studentProfiles = await fetchData.GetStudentProfilesAsync();
-
-            return studentProfiles;
+            return await fetchData.GetStudentProfilesAsync();            
         }
-          
 
+        public static int StudentWithLargestGPADifference(IEnumerable<StudentProfile> studentProfiles)
+        {
+            IAnalyzeLargestGPADifference analyzeLargestGPADifference = new AnalyzeLargestGPADifference();
+            return analyzeLargestGPADifference.StudentIdWithLargestMinMaxGPADifference(studentProfiles);
+        }
 
+        public static List<int> Top10StudentIdsWithHighestOverallGPA(IEnumerable<StudentProfile> studentProfiles)
+        {
+            IAnalyzeStudentsWithHighestGPA analyzeStudentsWithHighestGPA = new AnalyzeStudentsWithHighestGPA();
+            return analyzeStudentsWithHighestGPA.StudentsWithHighestOverallGPA(studentProfiles);
+        }
 
-        //TODO:
-        // make method name end in async if they are async
+        public static int CalculateYearOfHighestAttendance(IEnumerable<StudentProfile> studentProfiles)
+        {
+            IAnalyzeHighestAttendanceYear analyzeData = new AnalyzeHighestAttendanceYear();
+            return analyzeData.GetYearOfHighestAttendance(studentProfiles);
+        }
+
+        public static int CalculateYearOfHighestOverallGPA(IEnumerable<StudentProfile> studentProfiles)
+        {
+            IAnalyzeHighestGPAYear analyzeHighestGPAYear = new AnalyzeHighestGPAYear();
+            return analyzeHighestGPAYear.YearOfHighestGPA(studentProfiles);
+        }
+
+        public static bool SubmitTestResults(int yearOfHighestAttendance, int yearOfHighestGPA, List<int> listOfStudentIdsWithHighestGPA, int mostInconsistentStudentId)
+        {
+            bool isSuccess = false;
+            try
+            {
+                SubmitResults submitResults = new SubmitResults(urlPUT);
+                isSuccess = submitResults.SubmitTestResults(yearOfHighestAttendance, yearOfHighestGPA, listOfStudentIdsWithHighestGPA, mostInconsistentStudentId);                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+
+            }
+            return isSuccess;
+        }
+
     }
 }

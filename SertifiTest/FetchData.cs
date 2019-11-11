@@ -19,28 +19,34 @@ namespace SertifiTest
         public async Task<IEnumerable<StudentProfile>> GetStudentProfilesAsync()
         {
             HttpClient client = new HttpClient();
-            var response = await client.GetAsync(URL);
+            IEnumerable<StudentProfile> studentProfiles = new List<StudentProfile>();
+            try
+            {
+                var response = await client.GetAsync(URL);
 
-            var responseAsString = await ReadHttpResponseAsString(response);
+                var responseAsString = await ReadHttpResponseAsStringAsync(response);
 
-            var studentProfiles = DeserializeInputStringToStudentProfile(responseAsString);
+                studentProfiles = DeserializeInputStringToStudentProfile(responseAsString);
 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+
+            }
             return studentProfiles;
         }
 
-        private async Task<string> ReadHttpResponseAsString(HttpResponseMessage httpResponseMessage)
+        private async Task<string> ReadHttpResponseAsStringAsync(HttpResponseMessage httpResponseMessage)
         {
-            return await httpResponseMessage.Content.ReadAsStringAsync();
-          
+            return await httpResponseMessage.Content.ReadAsStringAsync();          
         }
 
         private  IEnumerable<StudentProfile> DeserializeInputStringToStudentProfile(string inputResponse)
         {
             var result =  JsonConvert.DeserializeObject<IEnumerable<StudentProfile>>(inputResponse);
             return result;
-        }
-
-        
+        }        
 
         public bool ValidateUrl()
         {
