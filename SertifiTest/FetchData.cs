@@ -23,16 +23,12 @@ namespace SertifiTest
             try
             {
                 var response = await client.GetAsync(URL);
-
                 var responseAsString = await ReadHttpResponseAsStringAsync(response);
-
                 studentProfiles = DeserializeInputStringToStudentProfile(responseAsString);
-
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-
             }
             return studentProfiles;
         }
